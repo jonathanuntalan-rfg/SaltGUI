@@ -115,7 +115,8 @@ export class API {
   getRunnerJobsActive() {
     const params = {
       client: "runner",
-      fun: "jobs.active"
+      fun: "jobs.active",
+      metadata: { runtype: "SALTGUI" }
     };
     return this.apiRequest("POST", "/", params).catch(console.error);
   }

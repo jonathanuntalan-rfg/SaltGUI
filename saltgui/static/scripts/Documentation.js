@@ -91,6 +91,7 @@ export class Documentation {
 
     const tgtType = TargetType.menuTargetType._value;
 
+    // TODO _getRunParams is for cmdbox
     this.commandbox._getRunParams(tgtType, target, docCommand).then(
       response => this.commandbox._onRunReturn(response.return[0], dummyCommand)
     );

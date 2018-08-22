@@ -22,6 +22,7 @@ export class MinionsRoute extends PageRoute {
       minions.router.api.getWheelKeyListAll().then(minions._updateKeys);
       minions.router.api.getRunnerJobsListJobs().then(minions._updateJobs);
       minions.router.api.getRunnerJobsActive().then(minions._runningJobs);
+      minions.router.api.getTestProviders().then(Documentation.updateProviders);
       //we need these functions to populate the dropdown boxes
       minions.router.api.getWheelConfigValues().then(minions._configvalues);
     });

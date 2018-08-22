@@ -19,7 +19,7 @@
   overflow-y: hidden;
 }
 
-pre a {
+pre.output a {
   color: yellow;
 }
 

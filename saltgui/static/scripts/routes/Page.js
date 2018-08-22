@@ -232,6 +232,7 @@ export class PageRoute extends Route {
       if(job.Function === "schedule.modify") continue;
       if(job.Function === "schedule.run_job") continue;
       if(job.Function === "sys.doc") continue;
+      if(job.Function === "test.providers") continue;
       if(job.Function === "wheel.config.values") continue;
       if(job.Function === "wheel.key.accept") continue;
       if(job.Function === "wheel.key.delete") continue;

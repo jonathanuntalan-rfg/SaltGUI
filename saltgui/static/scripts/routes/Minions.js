@@ -6,8 +6,6 @@ export class MinionsRoute extends PageRoute {
 
   constructor(router) {
     super("^[\/]$", "Minions", "#page_minions", "#button_minions", router);
-    this.keysLoaded = false;
-    this.jobsLoaded = false;
 
     this._updateKeys = this._updateKeys.bind(this);
   }
@@ -66,9 +64,6 @@ export class MinionsRoute extends PageRoute {
 
       element.addEventListener("click", evt => this._runCommand(evt, hostname, "state.apply"));
     }
-
-    this.keysLoaded = true;
-    if(this.keysLoaded && this.jobsLoaded) this.resolvePromise();
   }
 
   _updateOfflineMinion(container, hostname) {

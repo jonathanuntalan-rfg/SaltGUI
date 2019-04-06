@@ -288,7 +288,7 @@ export class PageRoute extends Route {
 
     // update all finished jobs
     for(const tr of document.querySelector("table#jobs tbody").rows) {
-      const statusField = tr.querySelector(".no_status");
+      const statusField = tr.querySelector(".status.no_status");
       if(!statusField) continue;
       statusField.classList.remove("no_status");
       statusField.innerText = "done";

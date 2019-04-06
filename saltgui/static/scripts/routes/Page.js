@@ -369,6 +369,8 @@ export class PageRoute extends Route {
     const tdDetails = Route._createTd("details", "(click)");
     tdDetails.classList.add("no_status");
     tdDetails.addEventListener("click", evt => {
+      tdDetails.classList.add("no_status");
+      tdDetails.innerText = "loading...";
       this._getJobDetails(job.id);
       evt.stopPropagation();
       });

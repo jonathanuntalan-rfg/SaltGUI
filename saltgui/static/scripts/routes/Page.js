@@ -456,7 +456,7 @@ export class PageRoute extends Route {
         str += "</span>";
       } else { // if(key.startsWith("1-"))
         str += "<span style='color: red'>";
-        str += summary[key] + " failed(" + key.substr(2) + ")";
+        str += summary[key] + " failure(" + key.substr(2) + ")";
         str += "</span>";
       }
     }

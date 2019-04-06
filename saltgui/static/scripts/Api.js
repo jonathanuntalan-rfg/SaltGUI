@@ -10,6 +10,9 @@ export class HTTPError extends Error {
 export class API {
   constructor(apiurl="") {
     this.APIURL = apiurl;
+
+    //this.getEvents = this.getEvents.bind(this);
+    this.getEvents();
   }
 
   isAuthenticated() {
@@ -186,4 +189,59 @@ export class API {
         throw new HTTPError(response.status, response.statusText);
       });
   }
+
+  getEvents() {
+    var token = window.sessionStorage.getItem("token");
+    var source = new EventSource('/events?token=' + token);
+    source.onopen = function() { console.info('Listening for events...'); };
+    source.onerror = function(err) { console.error(err); };
+    source.onmessage = function(message) {
+      var saltEvent = JSON.parse(message.data);
+      var tag = saltEvent.tag;
+      var data = saltEvent.data;
+
+      // erase the public key value when it is present
+      // it is long and boring (so not because it is a secret)
+      if(data.pub) {
+        data.pub = "...";
+      }
+
+      if(tag === "salt/auth" && data.act === "pend")
+      {
+        // to show latest key request from live minions
+        //this.home.showPend(data);
+        console.log("tag(pend)", tag, "data", data);
+      }
+      else if(tag === "salt/auth" && data.act === "accept")
+      {
+        // never mind the accepted keys flying around
+        console.log("tag(accept)", tag, "data", data);
+      }
+      else if(tag === "salt/auth")
+      {
+        // never mind the accepted keys flying around
+        console.log("tag(other)", tag, "data", data);
+      }
+      else if(tag === "salt/key")
+      {
+        // to show any status changes for keys
+        //this.home.updateKey(data);
+        console.log("tag", tag, "data", data);
+      }
+      else if(false && tag.startsWith("salt/job/") && tag.includes("/ret/") > 0)
+      {
+        //console.log("salt/job/*/ret/*", tag, "data", data);
+        //this.home.jobResult(data);
+      }
+      else if(false && tag.startsWith("salt/wheel/") && tag.endsWith("/ret") > 0)
+      {
+        //console.log("salt/wheel/*", tag, "data", data);
+        //this.home.jobResult(data);
+      }
+      else
+      {
+        //console.log("tag", tag, "data", data);
+      }
+      }.bind(this);
+   }
 }

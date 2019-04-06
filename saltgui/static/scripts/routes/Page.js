@@ -354,7 +354,7 @@ export class PageRoute extends Route {
     menu.addMenuItem("Show&nbsp;details", function(evt) {
       window.location.assign("/job?id=" + encodeURIComponent(job.id));
     }.bind(this));
-    menu.addMenuItem("Quick&nbsp;details", function(evt) {
+    menu.addMenuItem("Update&nbsp;details", function(evt) {
       this._getJobDetails(job.id);
       evt.stopPropagation();
     }.bind(this));

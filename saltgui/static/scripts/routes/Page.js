@@ -11,6 +11,7 @@ export class PageRoute extends Route {
 
     this._runCommand = this._runCommand.bind(this);
     this._runningJobs = this._runningJobs.bind(this);
+    this._startRunningJobs = this._startRunningJobs.bind(this);
     this._updateJobs = this._updateJobs.bind(this);
     this._updateMinions = this._updateMinions.bind(this);
     this._getJobDetails = this._getJobDetails.bind(this);
@@ -126,19 +127,23 @@ export class PageRoute extends Route {
 
     const ipv4 = this._getBestIpNumber(minion);
     if(ipv4) {
-      const address = Route._createTd("status", ipv4);
+      const addressTd = Route._createTd("status", "");
+      const addressSpan = Route._createSpan("status2", ipv4);
+      addressTd.appendChild(addressSpan);
       // ipnumbers do not sort well, reformat into something sortable
       const ipv4parts = ipv4.split(".");
       let sorttable_customkey = "";
       if(ipv4parts.length === 4) {
         // never mind adding '.'; this is only a sort-key
         for(let i = 0; i < 4; i++) sorttable_customkey += ipv4parts[i].padStart(3, "0");
-        address.setAttribute("sorttable_customkey", sorttable_customkey);
+        addressTd.setAttribute("sorttable_customkey", sorttable_customkey);
       }
-      address.classList.add("address");
-      address.setAttribute("tabindex", -1);
-      address.addEventListener("click", this._copyAddress);
-      element.appendChild(address);
+      addressTd.classList.add("address");
+      addressTd.setAttribute("tabindex", -1);
+      addressSpan.addEventListener("click", this._copyAddress);
+      addressSpan.addEventListener("mouseout", this._restoreClickToCopy);
+      Utils.addToolTip(addressSpan, "Click to copy");
+      element.appendChild(addressTd);
     } else {
       const accepted = Route._createTd("status", "accepted");
       accepted.classList.add("accepted");
@@ -240,7 +245,7 @@ export class PageRoute extends Route {
       if(job.Function === "wheel.key.reject") continue;
       if(job.Function === "wheel.key.finger") continue;
 
-      if(detailedJob === true) {
+      if(detailedJob) {
         this._addDetailedJob(jobContainer, job);
       } else {
         this._addJob(jobContainer, job);
@@ -261,12 +266,12 @@ export class PageRoute extends Route {
 
       let targetText = "";
       let targetField;
-      if(jobsStatus === true) {
-        targetField = document.querySelector(".jobs #job" + k + " .status");
+      if(jobsStatus) {
+        targetField = document.querySelector(".jobs tr#job" + k + " td.status span");
       } else {
         // start with same text as for _addJob
         targetText = TargetType.makeTargetText(job["Target-type"], job.Target) + ", ";
-        targetField = document.querySelector(".jobs #job" + k + " .target");
+        targetField = document.querySelector(".jobs td#job" + k + " div.target span");
       }
       if(targetText.length > 50) {
         // prevent column becoming too wide
@@ -284,14 +289,18 @@ export class PageRoute extends Route {
       if(!targetField) continue;
       targetField.classList.remove("no_status");
       targetField.innerText = targetText;
+      if(jobsStatus) Utils.addToolTip(targetField, "Click to refresh column");
     }
 
     // update all finished jobs
     for(const tr of document.querySelector("table#jobs tbody").rows) {
-      const statusField = tr.querySelector(".status.no_status");
+      const statusField = tr.querySelector("td.status span.no_status");
       if(!statusField) continue;
       statusField.classList.remove("no_status");
       statusField.innerText = "done";
+      // we show the tooltip here so that the user is invited to click on this
+      // the user then sees other rows being updated without becoming invisible
+      Utils.addToolTip(statusField, "Click to refresh column");
     }
   }
 
@@ -306,7 +315,12 @@ export class PageRoute extends Route {
       // prevent column becoming too wide
       targetText = targetText.substring(0, 50) + "...";
     }
-    td.appendChild(Route._createDiv("target", targetText));
+    const div = Route._createDiv("target", "");
+    const span = Route._createSpan("target2", targetText);
+    div.appendChild(span);
+    td.appendChild(div);
+    /* effectively also the whole column, but it does not look like a column on screen */
+    Utils.addToolTip(div, "Click to refresh");
 
     const functionText = job.Function;
     td.appendChild(Route._createDiv("function", functionText));
@@ -362,18 +376,30 @@ export class PageRoute extends Route {
       this._runFullCommand(evt, job["Target-type"], job.Target, functionText);
     }.bind(this));
 
-    const tdStatus = Route._createTd("status", "loading...");
-    tdStatus.classList.add("no_status");
+    const tdStatus = Route._createTd("status", "");
+    const spanStatus = Route._createSpan("status2", "loading...");
+    spanStatus.classList.add("no_status");
+    spanStatus.addEventListener("click", evt => {
+      // show "loading..." only once, but we are updating the whole column
+      spanStatus.classList.add("no_status");
+      spanStatus.innerText = "loading...";
+      this._startRunningJobs(true);
+      evt.stopPropagation();
+    });
+    tdStatus.appendChild(spanStatus);
     tr.appendChild(tdStatus);
 
-    const tdDetails = Route._createTd("details", "(click)");
-    tdDetails.classList.add("no_status");
-    tdDetails.addEventListener("click", evt => {
-      tdDetails.classList.add("no_status");
-      tdDetails.innerText = "loading...";
+    const tdDetails = Route._createTd("details", "");
+    const spanDetails = Route._createSpan("details2", "(click)");
+    spanDetails.classList.add("no_status");
+    spanDetails.addEventListener("click", evt => {
+      spanDetails.classList.add("no_status");
+      spanDetails.innerText = "loading...";
       this._getJobDetails(job.id);
       evt.stopPropagation();
     });
+    Utils.addToolTip(spanDetails, "Click to refresh");
+    tdDetails.appendChild(spanDetails);
     tr.appendChild(tdDetails);
 
     // fill out the number of columns to that of the header
@@ -384,6 +410,13 @@ export class PageRoute extends Route {
     container.appendChild(tr);
 
     tr.addEventListener("click", evt => window.location.assign("/job?id=" + encodeURIComponent(job.id)));
+  }
+
+  _startRunningJobs(flag) {
+    const p = this;
+    this.router.api.getRunnerJobsActive().then(data => {
+      p._runningJobs(data, flag);
+    });
   }
 
   _jobsToArray(jobs) {
@@ -461,10 +494,11 @@ export class PageRoute extends Route {
       }
     }
 
-    const detailsField = document.querySelector(".jobs #job" + jobid + " .details");
-    if(!detailsField) return;
-    detailsField.innerHTML = str;
-    detailsField.classList.remove("no_status");
+    const detailsSpan = document.querySelector(".jobs #job" + jobid + " td.details span");
+    if(!detailsSpan) return;
+    detailsSpan.innerHTML = str;
+    detailsSpan.classList.remove("no_status");
+    Utils.addToolTip(detailsSpan, "Click to refresh");
   }
 
   _getJobDetails(jobid) {
@@ -484,7 +518,14 @@ export class PageRoute extends Route {
     selection.addRange(range);
     document.execCommand("copy");
 
+    Utils.addToolTip(target, "2Copied!");
+
     evt.stopPropagation();
+  }
+
+  _restoreClickToCopy(evt) {
+    const target = evt.target;
+    Utils.addToolTip(target, "1Click to copy");
   }
 
 }
